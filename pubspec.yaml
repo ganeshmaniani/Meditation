@@ -1,0 +1,72 @@
+name: meditation_new
+description: "A new Flutter project."
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.4 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.6
+  flutter_screenutil: ^5.9.0
+  shared_preferences: ^2.2.3
+  lottie: ^3.1.0
+  sqflite: ^2.3.3
+  provider: ^6.1.2
+  carousel_slider: ^4.2.1
+  awesome_dialog: ^3.2.1
+  audioplayers: ^6.0.0
+  simple_ripple_animation: ^0.0.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+
+flutter:
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/image/
+    - assets/song/
+  #   - images/a_dot_ham.jpeg
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/assets-and-images/#resolution-aware
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/assets-and-images/#from-packages
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  fonts:
+    - family: HelveticaNeue
+      fonts:
+        - asset: assets/font/HelveticaNeueLight.otf
+        - asset: assets/font/HelveticaNeueMedium.otf
+          weight: 600
+        - asset: assets/font/HelveticaNeueBold.otf
+          weight: 700
+        - asset: assets/font/HelveticaNeueThin.otf
+          weight: 300
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/custom-fonts/#from-packages
