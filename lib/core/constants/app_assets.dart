@@ -34,5 +34,6 @@ class AppAssets {
       '$baseUrlImage/playlist_profile_4.jpg';
 
   ///View Meditation
-  static const String meditationAudio = 'song/alert.mp3';
+  static const String meditationAlartTone = 'song/bell_sound.mp3';
+  static const String meditationPlayTone = 'song/meditation_music.mp3';
 }

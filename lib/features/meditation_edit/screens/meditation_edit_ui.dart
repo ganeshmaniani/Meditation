@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../config/config.dart';
 import '../../../core/core.dart';
 import '../../features.dart';
+import '../../meditation_add/screens/widgets/custom_time_picker.dart';
 
 class MeditationEditUI extends StatefulWidget {
   final int id;
@@ -192,6 +192,7 @@ class _MeditationEditUIState extends State<MeditationEditUI> {
 
   _openShowDialog(
       {required int id, required String subtitle, required String duration}) {
+    GlobalKey<FormState> dialogFormKey = GlobalKey<FormState>();
     setState(() {
       subtitleController.text = subtitle;
       durationController.text = duration;
@@ -208,7 +209,7 @@ class _MeditationEditUIState extends State<MeditationEditUI> {
                     color: TColor.txtBG,
                     borderRadius: BorderRadius.circular(16)),
                 child: Form(
-                  key: formKey,
+                  key: dialogFormKey,
                   child: ListView(
                     children: [
                       SizedBox(height: 16.h),
@@ -217,10 +218,26 @@ class _MeditationEditUIState extends State<MeditationEditUI> {
                         hintText: "Subtitle",
                       ),
                       SizedBox(height: 8.h),
-                      RoundedTextField(
-                        controller: durationController,
-                        type: TextInputType.number,
-                        hintText: "Minutes",
+                      GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return CustomTimePicker(
+                                onDurationSelected: (Duration duration) {
+                                  durationController.text =
+                                      formatDuration(duration);
+                                },
+                              );
+                            },
+                          );
+                        },
+                        child: AbsorbPointer(
+                          child: RoundedTextField(
+                            controller: durationController,
+                            hintText: "Seconds",
+                          ),
+                        ),
                       ),
                       SizedBox(height: 32.h),
                       SizedBox(
@@ -230,8 +247,8 @@ class _MeditationEditUIState extends State<MeditationEditUI> {
                             title: "Submit",
                             type: RoundedButtonType.primary,
                             onPressed: () async {
-                              if (formKey.currentState != null &&
-                                  formKey.currentState!.validate()) {
+                              if (dialogFormKey.currentState != null &&
+                                  dialogFormKey.currentState!.validate()) {
                                 Map<String, dynamic> data = {
                                   'id': id,
                                   'title_list_id': widget.id,
@@ -255,5 +272,10 @@ class _MeditationEditUIState extends State<MeditationEditUI> {
         );
       },
     );
+  }
+
+  String formatDuration(Duration duration) {
+    String seconds = duration.inSeconds.toString().padLeft(2, '0');
+    return '$seconds';
   }
 }

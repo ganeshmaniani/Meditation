@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dart:typed_data';
-import 'package:simple_ripple_animation/simple_ripple_animation.dart';
+import 'package:meditation_new/config/config.dart';
 import 'package:meditation_new/features/features.dart';
+import 'package:simple_ripple_animation/simple_ripple_animation.dart';
 
 import '../../../core/core.dart';
 
@@ -31,11 +32,20 @@ class _MeditationViewUIState extends State<MeditationViewUI> {
   Timer? _timer;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isRippleAnimationRunning = false;
+  Duration _currentAudioPosition = Duration.zero;
+  bool _isPlayingAudio = false;
   @override
   void initState() {
     super.initState();
     isPaused = true;
     getList();
+    _audioPlayer.onPositionChanged.listen((position) {
+      if (_isPlayingAudio) {
+        setState(() {
+          _currentAudioPosition = position;
+        });
+      }
+    });
   }
 
   Future<void> getList() async {
@@ -68,11 +78,24 @@ class _MeditationViewUIState extends State<MeditationViewUI> {
     }
   }
 
-  void startTimer() {
+  void startTimer() async {
     setState(() {
       isPaused = false;
       isRippleAnimationRunning = true; // Start the animation
     });
+    try {
+      if (!_isPlayingAudio) {
+        await _audioPlayer.play(AssetSource(AppAssets.meditationPlayTone));
+        _isPlayingAudio = true;
+        log('Audio play success');
+      } else {
+        await _audioPlayer.seek(_currentAudioPosition);
+        _audioPlayer.resume();
+        log('Audio resume success');
+      }
+    } catch (error) {
+      log('Audio play error: $error');
+    }
     void countdown(int duration) {
       _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
         if (duration >= 0 && !isPaused) {
@@ -86,7 +109,8 @@ class _MeditationViewUIState extends State<MeditationViewUI> {
             if (duration == -1) {
               log('Audio');
               try {
-                await _audioPlayer.play(AssetSource(AppAssets.meditationAudio));
+                await _audioPlayer
+                    .play(AssetSource(AppAssets.meditationAlartTone));
                 log('Audio play success');
               } catch (error) {
                 log('Audio play error: $error');
@@ -103,14 +127,17 @@ class _MeditationViewUIState extends State<MeditationViewUI> {
               !isPaused) {
             // Delay the start of the next countdown
             Future.delayed(const Duration(seconds: 1), () {
-              countdown(int.parse(
-                  meditationWithDuration[currentSubtitleIndex].duration!));
+              countdown(remainingDurations[currentSubtitleIndex]);
+              // countdown(int.parse(
+              //     meditationWithDuration[currentSubtitleIndex].duration!));
             });
           } else {
             setState(() {
               openSuccessMessage();
               isPaused = true;
               isRippleAnimationRunning = false; // Stop the animation
+              _isPlayingAudio = false; // Reset playback state
+              _currentAudioPosition = Duration.zero; // Reset position
             });
           }
         }
@@ -119,8 +146,9 @@ class _MeditationViewUIState extends State<MeditationViewUI> {
     }
 
     // Start the countdown with the first duration
-    countdown(
-        int.parse(meditationWithDuration[currentSubtitleIndex].duration!));
+    countdown(remainingDurations[currentSubtitleIndex]);
+    // countdown(
+    //     int.parse(meditationWithDuration[currentSubtitleIndex].duration!));
     log(meditationWithDuration[currentSubtitleIndex].duration!.toString());
   }
 
@@ -129,22 +157,27 @@ class _MeditationViewUIState extends State<MeditationViewUI> {
       isPaused = !isPaused;
 
       if (isPaused) {
+        _audioPlayer.pause();
+        _isPlayingAudio = false;
         _timer?.cancel();
         isRippleAnimationRunning = false; //
       } else {
         startTimer();
       }
     });
-  } // Add a function to toggle pause/resume
-
-  void resetTimer() {
-    _timer?.cancel(); // Cancel the current timer
-    remainingDurations[currentSubtitleIndex] =
-        int.parse(meditationWithDuration[currentSubtitleIndex].duration!);
   }
 
-  bool isTimerRunning() {
-    return timers.isNotEmpty && !_timer!.isActive;
+  void resetTimer() {
+    _timer?.cancel();
+    _audioPlayer.stop();
+    _isPlayingAudio = false;
+    setState(() {
+      remainingDurations[currentSubtitleIndex] =
+          int.parse(meditationWithDuration[currentSubtitleIndex].duration!);
+      isPaused = true;
+      isRippleAnimationRunning = false;
+      _currentAudioPosition = Duration.zero; // Reset position
+    });
   }
 
   @override
@@ -162,59 +195,77 @@ class _MeditationViewUIState extends State<MeditationViewUI> {
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FloatingActionButton(
-              heroTag: 'uniqueTag1',
-              backgroundColor: Colors.white,
-              elevation: 0,
-              onPressed: currentSubtitleIndex > 0
-                  ? () {
-                      setState(() {
-                        isPaused = true;
-                        resetTimer();
-                        currentSubtitleIndex--;
-                      });
-                    }
-                  : () {},
-              child: const Icon(Icons.skip_previous, color: Colors.black)),
-          SizedBox(width: 10.w),
-          FloatingActionButton(
-            heroTag: 'uniqueTag2',
-            backgroundColor: Colors.white,
-            elevation: 0,
-            onPressed: () {
+          CustomFAButton(
+            buttonText: isPaused ? "Play" : "Pause",
+            onPressed: () async {
               if (timers.isEmpty) {
                 startTimer();
               } else {
                 togglePause();
               }
             },
-            child: isPaused
-                ? const Icon(Icons.play_arrow, color: Colors.black)
-                : const Icon(Icons.pause, color: Colors.black),
           ),
           SizedBox(width: 10.w),
-          FloatingActionButton(
-            heroTag: 'uniqueTag3',
-            backgroundColor: Colors.white,
-            elevation: 0,
-            onPressed: currentSubtitleIndex < meditationWithDuration.length - 1
-                ? () {
-                    setState(() {
-                      isPaused = true;
-                      resetTimer();
-                      currentSubtitleIndex = currentSubtitleIndex + 1;
-                      log(currentSubtitleIndex.toString());
-                    });
-                  }
-                : () {
-                    setState(() {
-                      currentSubtitleIndex = 0;
-                    });
-                  },
-            child: const Icon(Icons.skip_next, color: Colors.black),
-          ),
+          CustomFAButton(buttonText: "Reset", onPressed: resetTimer),
         ],
       ),
+
+      //  Row(
+      //   mainAxisAlignment: MainAxisAlignment.center,
+      //   children: [
+      //     FloatingActionButton(
+      //         heroTag: 'uniqueTag1',
+      //         backgroundColor: Colors.white,
+      //         elevation: 0,
+      //         onPressed: currentSubtitleIndex > 0
+      //             ? () {
+      //                 setState(() {
+      //                   isPaused = true;
+      //                   resetTimer();
+      //                   currentSubtitleIndex--;
+      //                 });
+      //               }
+      //             : () {},
+      //         child: const Icon(Icons.skip_previous, color: Colors.black)),
+      //     SizedBox(width: 10.w),
+      //     FloatingActionButton(
+      //       heroTag: 'uniqueTag2',
+      //       backgroundColor: Colors.white,
+      //       elevation: 0,
+      //       onPressed: () {
+      //         if (timers.isEmpty) {
+      //           startTimer();
+      //         } else {
+      //           togglePause();
+      //         }
+      //       },
+      //       child: isPaused
+      //           ? const Icon(Icons.play_arrow, color: Colors.black)
+      //           : const Icon(Icons.pause, color: Colors.black),
+      //     ),
+      //     SizedBox(width: 10.w),
+      //     FloatingActionButton(
+      //       heroTag: 'uniqueTag3',
+      //       backgroundColor: Colors.white,
+      //       elevation: 0,
+      //       onPressed: currentSubtitleIndex < meditationWithDuration.length - 1
+      //           ? () {
+      //               setState(() {
+      //                 isPaused = true;
+      //                 resetTimer();
+      //                 currentSubtitleIndex = currentSubtitleIndex + 1;
+      //                 log(currentSubtitleIndex.toString());
+      //               });
+      //             }
+      //           : () {
+      //               setState(() {
+      //                 currentSubtitleIndex = 0;
+      //               });
+      //             },
+      //       child: const Icon(Icons.skip_next, color: Colors.black),
+      //     ),
+      //   ],
+      // ),
       body: MemoryBackGroundImage(
         playImage: widget.playlistImage,
         child: SingleChildScrollView(
@@ -248,7 +299,7 @@ class _MeditationViewUIState extends State<MeditationViewUI> {
                           bottom: 60.h,
                           top: 60.h,
                           left: 50,
-                          child: SizedBox()),
+                          child: const SizedBox()),
                   Positioned(
                     right: 50,
                     bottom: 60.h,

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -8,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../config/config.dart';
 import '../../../core/core.dart';
 import '../../features.dart';
+import 'widgets/custom_time_picker.dart';
 
 class MeditationAddUi extends StatefulWidget {
   const MeditationAddUi({super.key});
@@ -73,6 +72,17 @@ class _MeditationAddUiState extends State<MeditationAddUi> {
                     title: "Add Your Meditation",
                   ),
                   SizedBox(height: 8.h),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Text("Select Background Image",
+                            style: TextStyle(
+                                color: TColor.secondary,
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w600))),
+                  ),
+                  SizedBox(height: 8.h),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -93,12 +103,12 @@ class _MeditationAddUiState extends State<MeditationAddUi> {
                       controller: descriptionController,
                       hintText: 'Description...',
                       maxLine: 4),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 12.h),
                   SizedBox(
                     width: MediaQuery.of(context).size.width / 2,
                     height: 40.h,
                     child: RoundedButton(
-                      title: "Add",
+                      title: "Add Steps",
                       type: RoundedButtonType.primary,
                       onPressed: () {
                         showDialog(
@@ -121,10 +131,28 @@ class _MeditationAddUiState extends State<MeditationAddUi> {
                                           hintText: "Subtitle",
                                         ),
                                         SizedBox(height: 8.h),
-                                        RoundedTextField(
-                                          controller: durationController,
-                                          type: TextInputType.number,
-                                          hintText: "Minutes",
+                                        GestureDetector(
+                                          onTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return CustomTimePicker(
+                                                  onDurationSelected:
+                                                      (Duration duration) {
+                                                    durationController.text =
+                                                        formatDuration(
+                                                            duration);
+                                                  },
+                                                );
+                                              },
+                                            );
+                                          },
+                                          child: AbsorbPointer(
+                                            child: RoundedTextField(
+                                              controller: durationController,
+                                              hintText: "Seconds",
+                                            ),
+                                          ),
                                         ),
                                         SizedBox(height: 32.h),
                                         SizedBox(
@@ -148,10 +176,8 @@ class _MeditationAddUiState extends State<MeditationAddUi> {
                                                           .trim();
                                                   meditationWithDuration
                                                           .duration =
-                                                      formatDuration(int.parse(
-                                                          durationController
-                                                              .text
-                                                              .trim()));
+                                                      durationController.text
+                                                          .trim();
 
                                                   meditationWithDuration
                                                           .createdAt =
@@ -177,7 +203,7 @@ class _MeditationAddUiState extends State<MeditationAddUi> {
                       },
                     ),
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 12.h),
                   meditationWithDurationList.isEmpty
                       ? Column(
                           children: [
@@ -238,18 +264,8 @@ class _MeditationAddUiState extends State<MeditationAddUi> {
     );
   }
 
-  String formatDuration(int seconds) {
-    Duration duration = Duration(minutes: seconds);
-    return duration.inSeconds.toString();
-
-    // if (selectTime == 'Minutes') {
-    //   // Format duration in minutes and seconds
-    //   String minutes = (duration.inMinutes % 60).toString().padLeft(2, '');
-    //   String secondStr = (duration.inSeconds % 60).toString().padLeft(2, '0');
-    //   return '$minutes';
-    // } else {
-    //   // Format duration in seconds
-    //   return duration.inSeconds.toString();
-    // }
+  String formatDuration(Duration duration) {
+    String seconds = duration.inSeconds.toString().padLeft(2, '0');
+    return '$seconds';
   }
 }
